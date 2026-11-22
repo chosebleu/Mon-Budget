@@ -52,6 +52,11 @@ void main() {
   });
 
   Future<void> ouvrirBudget(WidgetTester tester) async {
+    tester.binding.platformDispatcher.localeTestValue = const Locale(
+      'fr',
+      'FR',
+    );
+    addTearDown(tester.binding.platformDispatcher.clearLocaleTestValue);
     await tester.pumpWidget(const MonBudgetApp());
 
     // Le stockage utilise les entrées/sorties réelles du dossier temporaire.

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import 'stockage_v2.dart';
+import 'formats_internationaux.dart';
+import 'traductions_v2.dart';
 import 'feuilles_mensuelles_v2.dart';
 
 void main() {
@@ -205,6 +207,17 @@ class StructureV2 extends StatefulWidget {
 
 class _StructureV2State extends State<StructureV2> {
   bool sousTotauxCouleursOuverts = false;
+  String deviseSelectionnee = 'EUR';
+  String langueSelectionnee = 'auto';
+
+  String tr(String texte) => TraductionsV2.traduire(texte, langueEffective);
+
+  String get langueEffective {
+    if (langueSelectionnee != 'auto') return langueSelectionnee;
+    final code = WidgetsBinding.instance.platformDispatcher.locale.languageCode;
+    return code == 'fr' ? 'fr' : 'en';
+  }
+
   int pageActive = 0;
 
   // GLISSEMENT_SIDEBAR_V3
@@ -330,15 +343,14 @@ class _StructureV2State extends State<StructureV2> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Nouvelle feuille créée')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(tr('Nouvelle feuille créée'))));
     } catch (erreur) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Création impossible : $erreur')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${tr('Création impossible')} : $erreur')),
+      );
     } finally {
       if (mounted) {
         setState(() => creationMensuelleEnCours = false);
@@ -532,8 +544,8 @@ class _StructureV2State extends State<StructureV2> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            const Text(
-                              'Importer depuis le mois précédent',
+                            Text(
+                              tr('Importer depuis le mois précédent'),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white,
@@ -577,7 +589,7 @@ class _StructureV2State extends State<StructureV2> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          item.$1,
+                                          tr(item.$1),
                                           style: const TextStyle(
                                             color: Colors.white,
                                             fontSize: 15,
@@ -621,9 +633,9 @@ class _StructureV2State extends State<StructureV2> {
                                 ),
                                 child: Row(
                                   children: [
-                                    const Expanded(
+                                    Expanded(
                                       child: Text(
-                                        'Tout importer',
+                                        tr('Tout importer'),
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontSize: 15,
@@ -653,15 +665,19 @@ class _StructureV2State extends State<StructureV2> {
                               ),
                             ),
                             if (!moisPrecedentDisponible)
-                              const Text(
-                                'Aucune feuille pour le mois qui précède celui-ci. '
-                                'La nouvelle feuille sera vide.',
+                              Text(
+                                tr(
+                                  'Aucune feuille précédente. La nouvelle feuille sera vide.',
+                                ),
+
                                 textAlign: TextAlign.center,
                                 style: TextStyle(color: Colors.white70),
                               ),
                             const SizedBox(height: 8),
-                            const Text(
-                              'Les dépenses ponctuelles ne sont pas copiées.',
+                            Text(
+                              tr(
+                                'Les dépenses ponctuelles ne sont pas copiées.',
+                              ),
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: Colors.white70,
@@ -677,7 +693,7 @@ class _StructureV2State extends State<StructureV2> {
                 const SizedBox(height: 18),
                 Center(
                   child: IconButton(
-                    tooltip: 'Créer cette feuille',
+                    tooltip: tr('Créer cette feuille'),
                     onPressed: creationMensuelleEnCours || !pageSelectionnee
                         ? null
                         : () => creerFeuilleEnPreparation(destination),
@@ -738,7 +754,7 @@ class _StructureV2State extends State<StructureV2> {
                             duration: const Duration(milliseconds: 250),
                             curve: Curves.easeOutCubic,
                           ),
-                    child: const Text('Annuler'),
+                    child: Text(tr('Annuler')),
                   ),
                 ],
               ],
@@ -820,6 +836,18 @@ class _StructureV2State extends State<StructureV2> {
           return valeur.toDouble().clamp(0.0, 1.0);
         }
         return defaut;
+      }
+
+      final langueChargee = donnees['langue'];
+      if (langueChargee is String &&
+          const ['auto', 'fr', 'en'].contains(langueChargee)) {
+        langueSelectionnee = langueChargee;
+      }
+
+      final deviseChargee = donnees['devise'];
+      if (deviseChargee is String &&
+          FormatsInternationaux.devises.any((d) => d.code == deviseChargee)) {
+        deviseSelectionnee = deviseChargee;
       }
 
       final saturationChargee = lireReglagePalette('saturationPalette', 0.65);
@@ -924,11 +952,14 @@ class _StructureV2State extends State<StructureV2> {
     ];
 
     final date = GestionFeuillesMensuellesV2.dateDepuisIdentifiant(identifiant);
-    return '${mois[date.month - 1]} ${date.year}';
+    return '${tr(mois[date.month - 1])} ${date.year}';
   }
 
   String montantFormate(double montant) {
-    return '${montant.toStringAsFixed(2).replaceAll('.', ',')} €';
+    return FormatsInternationaux.montant(
+      montant,
+      codeDevise: deviseSelectionnee,
+    );
   }
 
   String dateFormatee(DateTime date) {
@@ -990,8 +1021,8 @@ class _StructureV2State extends State<StructureV2> {
                 ),
                 title: Text(
                   operation == null
-                      ? 'Ajouter une opération'
-                      : 'Modifier une opération',
+                      ? tr('Ajouter une opération')
+                      : tr('Modifier une opération'),
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
@@ -1010,8 +1041,10 @@ class _StructureV2State extends State<StructureV2> {
                         ),
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Montant',
-                          suffixText: '€',
+                          labelText: tr('Montant'),
+                          suffixText: FormatsInternationaux.devise(
+                            deviseSelectionnee,
+                          ).symbole,
                           labelStyle: const TextStyle(color: Color(0xFFB8BEC8)),
                           filled: true,
                           fillColor: const Color(0xFF30343A),
@@ -1029,7 +1062,7 @@ class _StructureV2State extends State<StructureV2> {
                         textCapitalization: TextCapitalization.sentences,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Intitulé',
+                          labelText: tr('Intitulé'),
                           labelStyle: const TextStyle(color: Color(0xFFB8BEC8)),
                           filled: true,
                           fillColor: const Color(0xFF30343A),
@@ -1108,7 +1141,7 @@ class _StructureV2State extends State<StructureV2> {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(dialogContext),
-                    child: const Text('Annuler'),
+                    child: Text(tr('Annuler')),
                   ),
                   FilledButton(
                     style: FilledButton.styleFrom(
@@ -1129,7 +1162,7 @@ class _StructureV2State extends State<StructureV2> {
                           !montant.isFinite ||
                           montant <= 0) {
                         modifierDialogue(() {
-                          erreur = 'Intitulé et montant positif requis.';
+                          erreur = tr('Intitulé et montant positif requis.');
                         });
                         return;
                       }
@@ -1143,7 +1176,9 @@ class _StructureV2State extends State<StructureV2> {
                         ),
                       );
                     },
-                    child: Text(operation == null ? 'Ajouter' : 'Enregistrer'),
+                    child: Text(
+                      tr(operation == null ? 'Ajouter' : 'Enregistrer'),
+                    ),
                   ),
                 ],
               );
@@ -1183,6 +1218,8 @@ class _StructureV2State extends State<StructureV2> {
     final donnees = <String, dynamic>{
       ...feuilleActive,
       'intitules': List<String>.from(intitulesMemorises),
+      'devise': deviseSelectionnee,
+      'langue': langueSelectionnee,
       'saturationPalette': widget.saturationPalette,
       'luminositePalette': widget.luminositePalette,
       'ordreBlocsAccueil': List<int>.from(ordreBlocsAccueil),
@@ -1223,8 +1260,8 @@ class _StructureV2State extends State<StructureV2> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Nouvelle opération',
+                Text(
+                  tr('Nouvelle opération'),
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 17,
@@ -1240,7 +1277,7 @@ class _StructureV2State extends State<StructureV2> {
                   ListTile(
                     leading: Icon(choix.$2, color: widget.accent),
                     title: Text(
-                      choix.$3,
+                      tr(choix.$3),
                       style: const TextStyle(color: Colors.white),
                     ),
                     onTap: () => Navigator.pop(sheetContext, choix.$1),
@@ -1281,8 +1318,8 @@ class _StructureV2State extends State<StructureV2> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Couleur du groupe',
+              Text(
+                tr('Couleur du groupe'),
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 18,
@@ -1331,7 +1368,7 @@ class _StructureV2State extends State<StructureV2> {
               TextButton.icon(
                 onPressed: () => Navigator.pop(contexte, -1),
                 icon: const Icon(Icons.format_color_reset_rounded),
-                label: const Text('Retirer la couleur'),
+                label: Text(tr('Retirer la couleur')),
               ),
             ],
           ),
@@ -1385,8 +1422,8 @@ class _StructureV2State extends State<StructureV2> {
                   const SizedBox(height: 14),
                   ListTile(
                     leading: Icon(Icons.edit_rounded, color: widget.accent),
-                    title: const Text(
-                      'Modifier',
+                    title: Text(
+                      tr('Modifier'),
                       style: TextStyle(color: Colors.white),
                     ),
                     onTap: () => Navigator.pop(sheetContext, 'modifier'),
@@ -1397,8 +1434,8 @@ class _StructureV2State extends State<StructureV2> {
                         Icons.event_repeat_rounded,
                         color: widget.accent,
                       ),
-                      title: const Text(
-                        'Ajouter aux charges fixes',
+                      title: Text(
+                        tr('Ajouter aux charges fixes'),
                         style: TextStyle(color: Colors.white),
                       ),
                       onTap: () => Navigator.pop(sheetContext, 'charge'),
@@ -1409,8 +1446,8 @@ class _StructureV2State extends State<StructureV2> {
                         Icons.palette_outlined,
                         color: Color(0xFFB0B6C0),
                       ),
-                      title: const Text(
-                        'Couleur du groupe',
+                      title: Text(
+                        tr('Couleur du groupe'),
                         style: TextStyle(color: Colors.white),
                       ),
                       onTap: () => Navigator.pop(sheetContext, 'couleur'),
@@ -1421,8 +1458,8 @@ class _StructureV2State extends State<StructureV2> {
                       Icons.delete_outline_rounded,
                       color: Color(0xFFFF9999),
                     ),
-                    title: const Text(
-                      'Effacer',
+                    title: Text(
+                      tr('Effacer'),
                       style: TextStyle(color: Color(0xFFFF9999)),
                     ),
                     onTap: () => Navigator.pop(sheetContext, 'effacer'),
@@ -1473,16 +1510,16 @@ class _StructureV2State extends State<StructureV2> {
         context: context,
         builder: (dialogContext) {
           return AlertDialog(
-            title: const Text('Effacer cette opération ?'),
+            title: Text(tr('Effacer cette opération ?')),
             content: Text(operation.intitule),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Annuler'),
+                child: Text(tr('Annuler')),
               ),
               FilledButton(
                 onPressed: () => Navigator.pop(dialogContext, true),
-                child: const Text('Effacer'),
+                child: Text(tr('Effacer')),
               ),
             ],
           );
@@ -1884,7 +1921,7 @@ class _StructureV2State extends State<StructureV2> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Sous-total sélection (${selectionDuMois.length})',
+                      '${tr('Sous-total sélection')} (${selectionDuMois.length})',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -1929,7 +1966,7 @@ class _StructureV2State extends State<StructureV2> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Groupe ${groupe + 1}',
+                          '${tr('Groupe')} ${groupe + 1}',
                           style: TextStyle(
                             fontSize: 13,
                             color: Theme.of(context)
@@ -1990,8 +2027,8 @@ class _StructureV2State extends State<StructureV2> {
         builder: (dialogContext) => StatefulBuilder(
           builder: (dialogContext, actualiser) => AlertDialog(
             backgroundColor: const Color(0xFF25282D),
-            title: const Text(
-              'Salaire et reliquat',
+            title: Text(
+              tr('Salaire et reliquat'),
               style: TextStyle(color: Colors.white),
             ),
             content: SingleChildScrollView(
@@ -2006,8 +2043,10 @@ class _StructureV2State extends State<StructureV2> {
                       decimal: true,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Salaire',
-                      suffixText: '€',
+                      labelText: tr('Salaire'),
+                      suffixText: FormatsInternationaux.devise(
+                        deviseSelectionnee,
+                      ).symbole,
                       errorText: erreurSalaire,
                     ),
                   ),
@@ -2020,16 +2059,24 @@ class _StructureV2State extends State<StructureV2> {
                       signed: true,
                     ),
                     decoration: InputDecoration(
-                      labelText: 'Reliquat',
-                      suffixText: '€',
+                      labelText: tr('Reliquat'),
+                      suffixText: FormatsInternationaux.devise(
+                        deviseSelectionnee,
+                      ).symbole,
                       errorText: erreurReliquat,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Text(
-                    'Le reliquat est ajouté au total disponible, '
-                    'sans modifier le reste sur salaire.',
-                    style: TextStyle(color: Color(0xFFB0B6C0), fontSize: 12),
+                  Text(
+                    langueEffective == 'en'
+                        ? 'Carryover is added to the total available, '
+                              'without changing the remaining salary.'
+                        : 'Le reliquat est ajouté au total disponible, '
+                              'sans modifier le reste sur salaire.',
+                    style: const TextStyle(
+                      color: Color(0xFFB0B6C0),
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -2037,7 +2084,7 @@ class _StructureV2State extends State<StructureV2> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Annuler'),
+                child: Text(tr('Annuler')),
               ),
               FilledButton(
                 onPressed: () {
@@ -2052,17 +2099,17 @@ class _StructureV2State extends State<StructureV2> {
                     actualiser(() {
                       erreurSalaire = salaireValide
                           ? null
-                          : 'Montant positif ou zéro requis.';
+                          : tr('Montant positif ou zéro requis.');
                       erreurReliquat = reliquatValide
                           ? null
-                          : 'Montant valide requis.';
+                          : tr('Montant valide requis.');
                     });
                     return;
                   }
 
                   Navigator.pop(dialogContext, (salaire, reliquat));
                 },
-                child: const Text('Enregistrer'),
+                child: Text(tr('Enregistrer')),
               ),
             ],
           ),
@@ -2124,15 +2171,16 @@ class _StructureV2State extends State<StructureV2> {
                 signed: montantSigne,
               ),
               decoration: InputDecoration(
-                labelText: 'Montant',
-                suffixText: '€',
+                labelText: tr('Montant'),
+                suffixText: FormatsInternationaux.devise(deviseSelectionnee)
+                    .symbole,
                 errorText: erreur,
               ),
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Annuler'),
+                child: Text(tr('Annuler')),
               ),
               FilledButton(
                 onPressed: () {
@@ -2148,15 +2196,15 @@ class _StructureV2State extends State<StructureV2> {
                       (!montantSigne && valeur < 0)) {
                     actualiser(() {
                       erreur = montantSigne
-                          ? 'Montant valide requis.'
-                          : 'Montant positif ou zéro requis.';
+                          ? tr('Montant valide requis.')
+                          : tr('Montant positif ou zéro requis.');
                     });
                     return;
                   }
 
                   Navigator.pop(dialogContext, valeur);
                 },
-                child: const Text('Enregistrer'),
+                child: Text(tr('Enregistrer')),
               ),
             ],
           ),
@@ -2300,7 +2348,7 @@ class _StructureV2State extends State<StructureV2> {
       switch (identifiant) {
         case 0:
           return blocAccueilFinancier(
-            titre: 'Salaire',
+            titre: tr('Salaire'),
             montant: budget.salaire,
             couleurMontant: const Color(0xFF64B5F6),
             icone: Icons.payments_rounded,
@@ -2308,23 +2356,23 @@ class _StructureV2State extends State<StructureV2> {
           );
         case 1:
           return blocAccueilFinancier(
-            titre: 'Reste sur salaire',
+            titre: tr('Reste sur salaire'),
             montant: resteSurSalaire,
             couleurMontant: couleurResteSalaire(),
             icone: Icons.account_balance_wallet_rounded,
-            sousTitre: 'Salaire moins charges fixes et dépenses',
+            sousTitre: tr('Salaire moins charges fixes et dépenses'),
           );
         case 2:
           return blocAccueilFinancier(
-            titre: 'Total dépenses',
+            titre: tr('Total dépenses'),
             montant: depenses,
             couleurMontant: const Color(0xFFEF5350),
             icone: Icons.receipt_long_rounded,
-            sousTitre: 'Hors charges fixes',
+            sousTitre: tr('Hors charges fixes'),
           );
         case 3:
           return blocAccueilFinancier(
-            titre: 'Épargne',
+            titre: tr('Épargne'),
             montant: budget.epargne,
             // ACCUEIL_EPARGNE_DISPONIBLE_VERT_V1
             couleurMontant: const Color(0xFF29B765),
@@ -2333,7 +2381,7 @@ class _StructureV2State extends State<StructureV2> {
           );
         case 4:
           return blocAccueilFinancier(
-            titre: 'Total disponible',
+            titre: tr('Total disponible'),
             montant: totalDisponible,
             couleurMontant: const Color(0xFF29B765),
             icone: Icons.add_card_rounded,
@@ -2417,12 +2465,12 @@ class _StructureV2State extends State<StructureV2> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: Text(titre),
+          title: Text(tr(titre)),
           content: Text(description),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Annuler'),
+              child: Text(tr('Annuler')),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
@@ -2430,7 +2478,7 @@ class _StructureV2State extends State<StructureV2> {
                 foregroundColor: Colors.white,
               ),
               onPressed: () => Navigator.pop(dialogContext, true),
-              child: Text(action),
+              child: Text(tr(action)),
             ),
           ],
         );
@@ -2446,10 +2494,13 @@ class _StructureV2State extends State<StructureV2> {
 
     final confirme = await confirmerSuppression(
       titre: 'Remettre ce mois à zéro ?',
-      description:
-          'La feuille de ${libelleMois(mois)} sera conservée. '
-          'Toutes ses dépenses, charges fixes et rentrées seront supprimées. '
-          'Le salaire, l’épargne et le reliquat seront remis à zéro.',
+      description: langueEffective == 'en'
+          ? 'The month ${libelleMois(mois)} will be kept. '
+                'All its expenses, fixed expenses and income will be deleted. '
+                'Salary, savings and carryover will be reset to zero.'
+          : 'La feuille de ${libelleMois(mois)} sera conservée. '
+                'Toutes ses dépenses, charges fixes et rentrées seront supprimées. '
+                'Le salaire, l’épargne et le reliquat seront remis à zéro.',
       action: 'Remettre ce mois à zéro',
     );
     if (!mounted ||
@@ -2473,7 +2524,7 @@ class _StructureV2State extends State<StructureV2> {
     } catch (erreur) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Sauvegarde impossible : $erreur')),
+        SnackBar(content: Text('${tr('Sauvegarde impossible')} : $erreur')),
       );
     }
   }
@@ -2487,9 +2538,10 @@ class _StructureV2State extends State<StructureV2> {
 
     final confirme = await confirmerSuppression(
       titre: 'Supprimer ce mois ?',
-      description:
-          'La feuille de ${libelleMois(mois)} et toutes ses '
-          'données seront supprimées.',
+      description: langueEffective == 'en'
+          ? 'The month ${libelleMois(mois)} and all its data will be deleted.'
+          : 'La feuille de ${libelleMois(mois)} et toutes ses '
+                'données seront supprimées.',
       action: 'Supprimer ce mois',
     );
     if (!mounted ||
@@ -2525,7 +2577,7 @@ class _StructureV2State extends State<StructureV2> {
     } catch (erreur) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Suppression impossible : $erreur')),
+        SnackBar(content: Text('${tr('Suppression impossible')} : $erreur')),
       );
     } finally {
       if (mounted) setState(() => suppressionMensuelleEnCours = false);
@@ -2542,7 +2594,7 @@ class _StructureV2State extends State<StructureV2> {
     ]..sort((a, b) => b.operation.date.compareTo(a.operation.date));
 
     if (lignes.isEmpty) {
-      return const Center(child: Text('Aucune opération trouvée'));
+      return Center(child: Text(tr('Aucune opération trouvée')));
     }
     return ListView.builder(
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
@@ -2551,7 +2603,9 @@ class _StructureV2State extends State<StructureV2> {
         final ligne = lignes[index];
         return ListTile(
           title: Text(ligne.operation.intitule),
-          subtitle: Text('${libelleMois(ligne.mois)} · ${titres[ligne.page]}'),
+          subtitle: Text(
+            '${libelleMois(ligne.mois)} · ${tr(titres[ligne.page])}',
+          ),
           trailing: Text(montantFormate(ligne.operation.montant)),
           onTap: () async {
             FocusScope.of(context).unfocus();
@@ -2580,6 +2634,7 @@ class _StructureV2State extends State<StructureV2> {
 
     return _RechercheStatistique(
       resultats: resultatsRechercheStatistique,
+      traduire: tr,
       graphique: _BilanFrise(
         detailsMois: (n, tri) {
           final date = DateTime(n ~/ 12 + 1, n % 12 + 1);
@@ -2589,8 +2644,8 @@ class _StructureV2State extends State<StructureV2> {
             return SliverToBoxAdapter(
               child: Text(
                 budget == null
-                    ? 'Aucune feuille pour ce mois'
-                    : 'Aucune dépense pour ce mois',
+                    ? tr('Aucune feuille pour ce mois')
+                    : tr('Aucune dépense pour ce mois'),
               ),
             );
           }
@@ -2644,7 +2699,7 @@ class _StructureV2State extends State<StructureV2> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      'Sous-total sélection (${selection.length})',
+                      '${tr('Sous-total sélection')} (${selection.length})',
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
@@ -2668,13 +2723,14 @@ class _StructureV2State extends State<StructureV2> {
         totaux: totaux,
         accent: widget.accent,
         montantFormate: montantFormate,
+        traduire: tr,
       ),
     );
   }
 
   Widget menuActionsMois(String mois) {
     return PopupMenuButton<({String action, String mois})>(
-      tooltip: 'Options de la feuille',
+      tooltip: tr('Options de la feuille'),
       color: Color.lerp(couleurBlocPalette(), Colors.white, 0.12)!,
       elevation: 10,
       shadowColor: Colors.black.withValues(alpha: 0.35),
@@ -2698,7 +2754,7 @@ class _StructureV2State extends State<StructureV2> {
       itemBuilder: (context) => [
         PopupMenuItem(
           value: (action: 'supprimer', mois: mois),
-          child: const Row(
+          child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -2709,7 +2765,7 @@ class _StructureV2State extends State<StructureV2> {
               SizedBox(width: 10),
               Flexible(
                 child: Text(
-                  'Supprimer ce mois',
+                  tr('Supprimer ce mois'),
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -2723,9 +2779,9 @@ class _StructureV2State extends State<StructureV2> {
             children: [
               Icon(Icons.restart_alt_rounded, color: widget.accent, size: 19),
               const SizedBox(width: 10),
-              const Flexible(
+              Flexible(
                 child: Text(
-                  'Remettre ce mois à zéro',
+                  tr('Remettre ce mois à zéro'),
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -2747,10 +2803,82 @@ class _StructureV2State extends State<StructureV2> {
     );
   }
 
+  Widget sectionDeviseInternationale() {
+    return Material(
+      color: couleurBlocPalette(),
+      borderRadius: BorderRadius.circular(18),
+      elevation: 6,
+      shadowColor: Colors.black.withValues(alpha: widget.sombre ? 0.42 : 0.24),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              tr('Langue et devise'),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              key: ValueKey('langue_$langueSelectionnee'),
+              initialValue: langueSelectionnee,
+              decoration: InputDecoration(
+                labelText: langueEffective == 'fr' ? 'Langue' : 'Language',
+                border: const OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: 'auto',
+                  child: Text('Automatique / System'),
+                ),
+                DropdownMenuItem(value: 'fr', child: Text('Français')),
+                DropdownMenuItem(value: 'en', child: Text('English')),
+              ],
+              onChanged: (valeur) {
+                if (valeur == null) return;
+                setState(() => langueSelectionnee = valeur);
+                enregistrerDonnees();
+              },
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              initialValue: deviseSelectionnee,
+              decoration: InputDecoration(
+                labelText: tr('Devise'),
+                border: OutlineInputBorder(),
+              ),
+              items: FormatsInternationaux.devises.map((devise) {
+                return DropdownMenuItem<String>(
+                  value: devise.code,
+                  child: Text('${devise.code} (${devise.symbole})'),
+                );
+              }).toList(),
+              onChanged: (valeur) {
+                if (valeur == null) return;
+                setState(() => deviseSelectionnee = valeur);
+                enregistrerDonnees();
+              },
+            ),
+            const SizedBox(height: 10),
+            Text(
+              tr(
+                'Changer de devise modifie uniquement l’affichage. Les montants enregistrés ne sont pas convertis.',
+              ),
+              style: TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget pageParametres() {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        sectionDeviseInternationale(),
+        const SizedBox(height: 16),
         Material(
           color: couleurBlocPalette(),
           borderRadius: BorderRadius.circular(18),
@@ -2764,24 +2892,24 @@ class _StructureV2State extends State<StructureV2> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Apparence',
+                Text(
+                  tr('Apparence'),
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Thème sombre'),
+                  title: Text(tr('Thème sombre')),
                   value: widget.sombre,
                   onChanged: widget.onTheme,
                 ),
                 const SizedBox(height: 12),
-                const Text('Couleur d’accent'),
+                Text(tr('Couleur d’accent')),
                 const SizedBox(height: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Teinte : ${HSVColor.fromColor(widget.accent).hue.round()}°',
+                      '${tr('Teinte')} : ${HSVColor.fromColor(widget.accent).hue.round()}°',
                       style: const TextStyle(fontWeight: FontWeight.w500),
                     ),
                     const SizedBox(height: 12),
@@ -2849,7 +2977,7 @@ class _StructureV2State extends State<StructureV2> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Luminosité : ${(widget.luminositePalette * 100).round()} %',
+                  '${tr('Luminosité')} : ${(widget.luminositePalette * 100).round()} %',
                   style: const TextStyle(fontWeight: FontWeight.w500),
                 ),
                 Slider(
@@ -3054,7 +3182,7 @@ class _StructureV2State extends State<StructureV2> {
                               AnimatedSwitcher(
                                 duration: const Duration(milliseconds: 180),
                                 child: Text(
-                                  titres[pageActive],
+                                  tr(titres[pageActive]),
                                   key: ValueKey(pageActive),
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
@@ -3131,6 +3259,7 @@ class _BilanFrise extends StatefulWidget {
     required this.totaux,
     required this.accent,
     required this.montantFormate,
+    required this.traduire,
   });
 
   final Widget Function(int, TriOperationsV2) detailsMois;
@@ -3139,6 +3268,7 @@ class _BilanFrise extends StatefulWidget {
   final Map<int, double> totaux;
   final Color accent;
   final String Function(double) montantFormate;
+  final String Function(String) traduire;
 
   @override
   State<_BilanFrise> createState() => _BilanFriseState();
@@ -3190,7 +3320,8 @@ class _BilanFriseState extends State<_BilanFrise> {
     maximum = widget.totaux.values.fold<double>(0, (a, b) => a > b ? a : b);
   }
 
-  String nomMois(int numero) => '${noms[numero % 12]} ${numero ~/ 12 + 1}';
+  String nomMois(int numero) =>
+      '${widget.traduire(noms[numero % 12])} ${numero ~/ 12 + 1}';
 
   // STATISTIQUE_MOIS_EN_COURS_V1
   void recentrerSurMoisEnCours() {
@@ -3303,7 +3434,7 @@ class _BilanFriseState extends State<_BilanFrise> {
     final montant = widget.totaux[numero];
     final valeur = montant == null ? '—' : widget.montantFormate(montant);
     final description =
-        '${nomMois(numero)}, ${montant == null ? "sans feuille" : valeur}';
+        '${nomMois(numero)}, ${montant == null ? widget.traduire('sans feuille') : valeur}';
     final hauteur = montant == null || maximum == 0
         ? 0.0
         : (montant / maximum) * 130.0;
@@ -3357,7 +3488,7 @@ class _BilanFriseState extends State<_BilanFrise> {
               child: Center(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Text(courts[numero % 12]),
+                  child: Text(widget.traduire(courts[numero % 12])),
                 ),
               ),
             ),
@@ -3386,7 +3517,7 @@ class _BilanFriseState extends State<_BilanFrise> {
               sliver: SliverList.list(
                 children: [
                   Text(
-                    'Dépenses hors charges fixes',
+                    widget.traduire('Dépenses hors charges fixes'),
                     style: theme.textTheme.titleLarge,
                   ),
                   const SizedBox(height: 6),
@@ -3395,7 +3526,7 @@ class _BilanFriseState extends State<_BilanFrise> {
                     child: TextButton.icon(
                       onPressed: recentrerSurMoisEnCours,
                       icon: const Icon(Icons.my_location_rounded, size: 18),
-                      label: const Text('Mois en cours'),
+                      label: Text(widget.traduire('Mois en cours')),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -3504,14 +3635,16 @@ class _BilanFriseState extends State<_BilanFrise> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Dépenses · ${nomMois(n)}',
+                            '${widget.traduire('Dépenses')} · ${nomMois(n)}',
                             style: theme.textTheme.titleMedium,
                           ),
                           if (ecart != null)
                             Text(
                               ecart == 0
-                                  ? 'Même montant que le mois précédent'
-                                  : '${widget.montantFormate(ecart.abs())} de ${ecart > 0 ? "plus" : "moins"} que le mois précédent',
+                                  ? widget.traduire(
+                                      'Même montant que le mois précédent',
+                                    )
+                                  : '${widget.montantFormate(ecart.abs())} ${widget.traduire(ecart > 0 ? "de plus que le mois précédent" : "de moins que le mois précédent")}',
                             ),
                           widget.sousTotalMois(n),
                           const SizedBox(height: 8),
@@ -3545,10 +3678,12 @@ class _RechercheStatistique extends StatefulWidget {
   const _RechercheStatistique({
     required this.graphique,
     required this.resultats,
+    required this.traduire,
   });
 
   final Widget graphique;
   final Widget Function(String terme) resultats;
+  final String Function(String) traduire;
 
   @override
   State<_RechercheStatistique> createState() => _RechercheStatistiqueState();
@@ -3580,12 +3715,12 @@ class _RechercheStatistiqueState extends State<_RechercheStatistique> {
             onChanged: actualiser,
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
-              hintText: 'Rechercher sur tous les mois',
+              hintText: widget.traduire('Rechercher sur tous les mois'),
               prefixIcon: const Icon(Icons.search_rounded),
               suffixIcon: terme.isEmpty
                   ? null
                   : IconButton(
-                      tooltip: 'Effacer la recherche',
+                      tooltip: widget.traduire('Effacer la recherche'),
                       icon: const Icon(Icons.close_rounded),
                       onPressed: () {
                         champ.clear();

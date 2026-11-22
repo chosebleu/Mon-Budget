@@ -29,22 +29,20 @@ android {
         versionName = flutter.versionName
     }
 
-    // La signature officielle est facultative pour le developpement.
-    // Les secrets ne sont jamais stockes dans le depot Git.
     val releaseKeystorePath = System.getenv("MON_BUDGET_KEYSTORE_PATH")
-    val releaseKeystorePassword = System.getenv("MON_BUDGET_KEYSTORE_PASSWORD")
+    val releaseStorePassword = System.getenv("MON_BUDGET_STORE_PASSWORD")
     val releaseKeyPassword = System.getenv("MON_BUDGET_KEY_PASSWORD")
 
     val releaseSigningEnabled =
         !releaseKeystorePath.isNullOrBlank() &&
-        !releaseKeystorePassword.isNullOrBlank() &&
+        !releaseStorePassword.isNullOrBlank() &&
         !releaseKeyPassword.isNullOrBlank()
 
     signingConfigs {
         if (releaseSigningEnabled) {
             create("release") {
                 storeFile = file(releaseKeystorePath!!)
-                storePassword = releaseKeystorePassword!!
+                storePassword = releaseStorePassword!!
                 keyAlias = "monbudget"
                 keyPassword = releaseKeyPassword!!
             }
@@ -53,16 +51,16 @@ android {
 
     buildTypes {
         release {
-            if (releaseSigningEnabled) {
-                signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (releaseSigningEnabled) {
+                signingConfigs.getByName("release")
             } else {
-                // Sans cle officielle, la compilation release reste non signee.
-                signingConfig = null
+                signingConfigs.getByName("debug")
             }
         }
     }
 }
 
+// GRADLE_BRACE_FIX_V2
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17

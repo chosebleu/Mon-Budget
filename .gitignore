@@ -60,30 +60,5 @@ sauvegardes/
 # Fichiers generes par Android
 android/build/
 
-# Publication publique - Mon Budget V2
-*.zip
-*.apk
-*.aab
-*.jks
-*.keystore
-*.p12
-*.pfx
-*.pem
-*.key
-.env
-.env.*
-**/local.properties
-**/key.properties
-**/google-services.json
-**/*.sqlite
-**/*.sqlite3
-**/*.db
-**/*.xlsx
-**/*.xls
-**/*.csv
-lib/main.dart.avant_*
-
-# Fichiers locaux et signature Android
-/android/local.properties
-/.flutter-plugins-dependencies
-key.properties
+*.avant_*
+*.sauvegarde_*

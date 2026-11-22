@@ -1,76 +1,45 @@
-<!-- MON_BUDGET_FRISE_GRAPHIQUE -->
+# Mon Budget
 
-![Presentation de Mon Budget V2](docs/frise_presentation_graphique.png)
+Application Android de gestion de budget personnel developpee avec Flutter.
 
-# Mon Budget V2
+## Fonctionnalites
 
-**Application Android de gestion de budget personnel**
+- Solde reel et reste a vivre
+- Saisie rapide des revenus et depenses
+- Gestion des charges fixes
+- Suivi mensuel du budget
+- Statistiques et filtres
+- Interface sombre
+- Langues francaise et anglaise
 
-Une application Flutter conçue pour suivre ses revenus, ses dépenses et son budget mensuel avec une interface sombre, épurée et pratique.
+## Telechargement
 
-Développement : **chosebleu**
+Les APK officiels sont disponibles dans les
+[Releases GitHub](https://github.com/chosebleu/mon-budget/releases).
 
-## Fonctionnalités
+Version : 1.1.0
 
-| Fonction | Description |
-|---|---|
-| Accueil | Consultation du solde réel et du reste à vivre |
-| Saisie rapide | Ajout de revenus et de dépenses |
-| Dépenses | Consultation, tri et filtrage des opérations |
-| Sélection multiple | Calcul du sous-total des dépenses sélectionnées |
-| Statistiques | Graphique mensuel et consultation des dépenses par mois |
-| Gestion mensuelle | Organisation des opérations par mois |
+## Installation
 
-## Parcours de l'application
+Telecharger le fichier APK de la derniere release et l'ouvrir
+sur un appareil Android.
 
-```mermaid
-flowchart LR
-    A["Accueil"] --> B["Saisie rapide"]
-    B --> C["Dépenses"]
-    C --> D["Filtres et sélection"]
-    D --> E["Statistiques"]
-    E --> F["Suivi mensuel"]
-```
+## Developpement
 
-## Captures d'écran
+Prerequis : Flutter et Android SDK.
 
-Les quatre captures de l'application sont disponibles dans `docs/screenshots`.
+Commandes :
 
-Les captures publiées utiliseront exclusivement des données fictives.
+    flutter pub get
+    flutter test
+    flutter run
 
-## Installation sur Android
-
-1. Ouvrir la section **Releases** du dépôt GitHub.
-2. Télécharger le fichier APK de la dernière version.
-3. Ouvrir l'APK sur un appareil Android compatible.
-4. Autoriser l'installation depuis cette source si Android le demande.
-5. Installer et lancer **Mon Budget V2**.
-
-L'application est destinée aux smartphones Android. Son utilisation sur tablette Android est également possible, sous réserve de validation de l'ergonomie sur grand écran.
-
-## Développement
-
-Projet développé avec Flutter et Dart.
-
-Pour lancer le projet depuis les sources :
-
-```powershell
-flutter pub get
-flutter run
-```
-
-Pour compiler un APK :
-
-```powershell
-flutter build apk --release
-```
-
-## Confidentialité
-
-L'application est conçue pour gérer un budget personnel avec un stockage local.
-
-Aucune donnée financière personnelle ne doit être incluse dans le dépôt public, les captures d'écran ou les fichiers de démonstration.
+La cle de signature officielle n'est pas fournie dans ce depot.
 
 ## Licence
 
-Ce projet est distribué sous licence MIT. Consulter le fichier `LICENSE`.
+MIT - voir le fichier LICENSE.
+
+## Developpeur
+
+chosebleu
