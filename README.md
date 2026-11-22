@@ -20,6 +20,11 @@
   </a>
 </p>
 
+<p align="center">
+  <strong>Langues disponibles :</strong><br>
+  Français · English
+</p>
+
 <p align="center">Développement : <strong>chosebleu</strong></p>
 
 ## Fonctionnalités
