@@ -1,0 +1,89 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Widget Preview related
+.widget_preview/
+
+# Donnees personnelles et classeurs Excel
+*.xls
+*.xlsx
+*.xlsm
+*.csv
+.env
+.env.*
+# Sauvegardes locales Mon Budget
+*.bak
+sauvegardes/
+# Fichiers generes par Android
+android/build/
+
+# Publication publique - Mon Budget V2
+*.zip
+*.apk
+*.aab
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+**/local.properties
+**/key.properties
+**/google-services.json
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+**/*.xlsx
+**/*.xls
+**/*.csv
+lib/main.dart.avant_*
+
+# Fichiers locaux et signature Android
+/android/local.properties
+/.flutter-plugins-dependencies
+key.properties

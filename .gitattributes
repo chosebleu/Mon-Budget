@@ -1,0 +1,16 @@
+# Normalisation des fichiers texte
+* text=auto
+
+# Scripts Gradle multiplateformes
+android/gradlew text eol=lf
+android/gradlew.bat text eol=crlf
+
+# Sources Flutter et configuration
+*.dart text eol=lf
+*.kts text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+
+# Fichiers binaires
+*.png binary
+*.jar binary
