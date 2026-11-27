@@ -1,4 +1,35 @@
-# Mon Budget
+<!-- MON_BUDGET_FRISE_GRAPHIQUE -->
+
+*Illustration de la V2 classique.*
+
+<p align="center">
+  <img src="docs/frise_presentation_graphique.png" alt="Présentation graphique de Mon Budget V2" width="100%">
+</p>
+
+<h1 align="center">Mon Budget V2.5</h1>
+
+<p align="center">
+  <strong>Application Android de gestion de budget personnel</strong><br>
+  Une application Flutter pour suivre ses revenus, ses dépenses et son budget mensuel avec une interface claire ou sombre, épurée et pratique.
+</p>
+
+<p align="center">
+  <a href="https://github.com/chosebleu/Mon-Budget/releases/latest">
+    <img src="https://img.shields.io/badge/Télécharger-APK%20Android-2f6f55?style=for-the-badge&logo=android&logoColor=white" alt="Télécharger l'APK Android">
+  </a>
+  <a href="https://github.com/chosebleu/Mon-Budget/releases">
+    <img src="https://img.shields.io/badge/Version-2.5.0-444444?style=for-the-badge" alt="Version 2.5.0">
+  </a>
+</p>
+
+<p align="center">
+  <strong>Langues disponibles :</strong><br>
+  Français · English / Espanol / Portugues / Deutsch / Italiano / Nederlands / Polski
+</p>
+
+<p align="center">Développement : <strong>chosebleu</strong></p>
+
+
 
 Application Android open source de gestion de budget personnel,
 developpee avec Flutter par **chosebleu**.
@@ -75,3 +106,30 @@ MIT - voir le fichier LICENSE.
 ## Developpeur
 
 **chosebleu**
+
+## Parcours de l'application
+
+```mermaid
+flowchart LR
+    A["Accueil"] --> B["Saisie rapide"]
+    B --> C["Dépenses"]
+    C --> D["Filtres et sélection"]
+    D --> E["Statistiques"]
+    E --> F["Suivi mensuel"]
+```
+
+
+## Captures d'écran
+
+<p align="center">
+  <img src="docs/screenshots/01_accueil.png" alt="Écran d'accueil - solde réel et reste à vivre" width="48%">
+  <img src="docs/screenshots/02_depenses.png" alt="Écran des dépenses" width="48%">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/03_statistiques.png" alt="Écran des statistiques" width="48%">
+  <img src="docs/screenshots/04_gestion_mensuelle.png" alt="Écran de gestion mensuelle" width="48%">
+</p>
+
+Captures de la V2 classique. Les visuels V2.5 seront ajoutes prochainement.
+
