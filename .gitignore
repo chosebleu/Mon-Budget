@@ -60,5 +60,14 @@ sauvegardes/
 # Fichiers generes par Android
 android/build/
 
-*.avant_*
-*.sauvegarde_*
+
+# Protection des fichiers confidentiels
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+*.apk
+key.properties
+local.properties
+mon_budget_v2.json*

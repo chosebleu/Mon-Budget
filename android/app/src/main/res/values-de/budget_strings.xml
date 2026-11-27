@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="budget_widget_label">Mon Budget - Schnelleingabe</string>
+    <string name="budget_widget_description">Buchung hinzufügen</string>
+</resources>

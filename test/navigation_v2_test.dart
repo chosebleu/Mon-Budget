@@ -1,3 +1,7 @@
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:mon_budget/preferences_regionales.dart';
+import 'package:mon_budget/traductions.dart';
+
 import 'dart:convert';
 import 'dart:io';
 
@@ -52,11 +56,14 @@ void main() {
   });
 
   Future<void> ouvrirBudget(WidgetTester tester) async {
+    // LANGUE_TESTS_V1
     tester.binding.platformDispatcher.localeTestValue = const Locale(
       'fr',
       'FR',
     );
+
     addTearDown(tester.binding.platformDispatcher.clearLocaleTestValue);
+
     await tester.pumpWidget(const MonBudgetApp());
 
     // Le stockage utilise les entrées/sorties réelles du dossier temporaire.
@@ -193,6 +200,115 @@ void main() {
     expect(find.textContaining('La feuille de Novembre 2026'), findsOneWidget);
   }
 
+  // TEST_PERSISTANCE_REGIONALE_V1
+  testWidgets('Langue et devise : modification et persistance', (tester) async {
+    await tester.runAsync(() async {
+      await initializeDateFormatting();
+    });
+
+    final novembre = feuille('2026-11', 1100);
+
+    await tester.runAsync(
+      () =>
+          preparerBudget(moisActif: '2026-11', feuilles: {'2026-11': novembre}),
+    );
+
+    await ouvrirBudget(tester);
+
+    expect(find.text('1100,00 €'), findsOneWidget);
+
+    dynamic etat = tester.state(find.byType(StructureV2));
+    etat.changerPage(5);
+    await tester.pumpAndSettle();
+
+    final panneau = find.byKey(const ValueKey('langue-devise'));
+
+    await tester.ensureVisible(panneau);
+    await tester.tap(panneau);
+    await tester.pumpAndSettle();
+
+    final langue = find.widgetWithText(ListTile, 'Langue');
+    await tester.ensureVisible(langue);
+    await tester.tap(langue);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(SimpleDialogOption, 'English'));
+    await tester.pumpAndSettle();
+
+    await attendreSauvegarde(tester, (d) => d['langueInterface'] == 'en');
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).locale?.languageCode,
+      'en',
+    );
+
+    expect(
+      find.text(Traductions.traduire('en', 'Langue et devise')),
+      findsOneWidget,
+    );
+
+    final devise = find.widgetWithText(
+      ListTile,
+      Traductions.traduire('en', 'Devise'),
+    );
+
+    await tester.ensureVisible(devise);
+    await tester.tap(devise);
+    await tester.pumpAndSettle();
+
+    final recherche = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+
+    await tester.enterText(recherche, 'USD');
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(ListTile, 'USD'),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    final sauvegarde = await attendreSauvegarde(
+      tester,
+      (d) => d['langueInterface'] == 'en' && d['deviseInterface'] == 'USD',
+    );
+
+    expect(sauvegarde['feuillesMensuelles'], {'2026-11': novembre});
+
+    etat.changerPage(0);
+    await tester.pumpAndSettle();
+
+    final montant = PreferencesRegionales.formaterMontant(1100, 'en', 'USD');
+
+    expect(find.text(montant), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pumpAndSettle();
+
+    await ouvrirBudget(tester);
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).locale?.languageCode,
+      'en',
+    );
+
+    expect(find.text(montant), findsOneWidget);
+
+    final recharge = await attendreSauvegarde(
+      tester,
+      (d) => d['langueInterface'] == 'en' && d['deviseInterface'] == 'USD',
+    );
+
+    expect(recharge['feuillesMensuelles'], {'2026-11': novembre});
+
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Annuler la remise à zéro conserve les données du mois', (
     tester,
   ) async {
@@ -240,7 +356,7 @@ void main() {
       await tester.tap(find.byIcon(Icons.home_rounded));
       await tester.pumpAndSettle();
       expect(find.text('Novembre 2026'), findsOneWidget);
-      expect(find.text('0,00 €'), findsNWidgets(5));
+      expect(find.text('0,00 €'), findsNWidgets(6));
 
       final sauvegarde = await attendreSauvegarde(
         tester,
@@ -262,7 +378,7 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       await ouvrirBudget(tester);
       expect(find.text('Novembre 2026'), findsOneWidget);
-      expect(find.text('0,00 €'), findsNWidgets(5));
+      expect(find.text('0,00 €'), findsNWidgets(6));
     },
   );
 
@@ -396,12 +512,24 @@ void main() {
     );
     await ouvrirBudget(tester);
     final pages = controleur(tester);
-    expect(pages.page, 3);
+    expect(pages.page, 5);
     expect(find.text('1200,00 €'), findsOneWidget);
+
     await glisserMois(tester, enArriere: true);
-    expect(pages.page, 2);
+    expect(pages.page, 4);
+    expect(find.text('Décembre 2026'), findsOneWidget);
+    expect(find.byTooltip('Créer cette feuille'), findsOneWidget);
+
+    await glisserMois(tester, enArriere: true);
+    expect(pages.page, 3);
     expect(find.text('Novembre 2026'), findsOneWidget);
     expect(find.text('1100,00 €'), findsOneWidget);
+
+    await glisserMois(tester, enArriere: true);
+    expect(pages.page, 2);
+    expect(find.text('Octobre 2026'), findsOneWidget);
+    expect(find.byTooltip('Créer cette feuille'), findsOneWidget);
+
     await glisserMois(tester, enArriere: true);
     expect(pages.page, 1);
     expect(find.text('Septembre 2026'), findsOneWidget);
@@ -469,6 +597,15 @@ void main() {
     expect(sauvegarde['moisActif'], '2026-10');
     expect(find.text('Octobre 2026'), findsOneWidget);
 
+    final corbeille = sauvegarde['corbeilleMensuelle'] as Map;
+    expect(corbeille.length, 1);
+    expect(corbeille.values.single['mois'], '2026-11');
+    expect(corbeille.values.single['feuille'], feuille('2026-11', 1100));
+
+    await glisserMois(tester, enArriere: false);
+    expect(find.text('Novembre 2026'), findsOneWidget);
+    expect(find.byTooltip('Créer cette feuille'), findsOneWidget);
+
     await glisserMois(tester, enArriere: false);
     expect(find.text('Décembre 2026'), findsOneWidget);
     expect(find.text('1200,00 €'), findsOneWidget);
@@ -476,23 +613,41 @@ void main() {
       tester,
       (donnees) => donnees['moisActif'] == '2026-12',
     );
+
+    await glisserMois(tester, enArriere: true);
+    expect(find.text('Novembre 2026'), findsOneWidget);
+    expect(find.byTooltip('Créer cette feuille'), findsOneWidget);
+
     await glisserMois(tester, enArriere: true);
     expect(find.text('Octobre 2026'), findsOneWidget);
+
     final retour = await attendreSauvegarde(
       tester,
       (donnees) => donnees['moisActif'] == '2026-10',
     );
+
     expect(retour['feuillesMensuelles'], feuilles);
+    expect(retour['corbeilleMensuelle'], corbeille);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await ouvrirBudget(tester);
+
     expect(find.text('Octobre 2026'), findsOneWidget);
+
+    await glisserMois(tester, enArriere: false);
+    expect(find.text('Novembre 2026'), findsOneWidget);
+    expect(find.byTooltip('Créer cette feuille'), findsOneWidget);
+
     await glisserMois(tester, enArriere: false);
     expect(find.text('Décembre 2026'), findsOneWidget);
-    await attendreSauvegarde(
+
+    final apresRedemarrage = await attendreSauvegarde(
       tester,
       (donnees) => donnees['moisActif'] == '2026-12',
     );
+
+    expect(apresRedemarrage['feuillesMensuelles'], feuilles);
+    expect(apresRedemarrage['corbeilleMensuelle'], corbeille);
   });
 
   testWidgets('Supprimer la dernière feuille ouvre un état vide rechargeable', (
@@ -1010,4 +1165,264 @@ void main() {
       expect(janvier['operations']['3'].single['montant'], 51);
     },
   );
+
+  // TESTS_CORBEILLE_V1
+
+  testWidgets('Corbeille : suppression, persistance et restauration', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(480, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final novembre = feuille('2026-11', 1100);
+    final decembre = feuille('2026-12', 1200);
+
+    await tester.runAsync(
+      () => preparerBudget(
+        moisActif: '2026-11',
+        feuilles: {'2026-11': novembre, '2026-12': decembre},
+      ),
+    );
+
+    await ouvrirBudget(tester);
+    await ouvrirConfirmationSuppression(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Supprimer ce mois'));
+
+    final supprime = await attendreSauvegarde(
+      tester,
+      (d) => !(d['feuillesMensuelles'] as Map).containsKey('2026-11'),
+    );
+
+    expect(supprime['feuillesMensuelles'], {'2026-12': decembre});
+
+    final corbeille = supprime['corbeilleMensuelle'] as Map;
+    expect(corbeille.length, 1);
+    expect(corbeille.values.single['mois'], '2026-11');
+    expect(corbeille.values.single['feuille'], novembre);
+
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await ouvrirBudget(tester);
+
+    final etat = tester.state(find.byType(StructureV2)) as dynamic;
+    etat.changerPage(5);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Corbeille'));
+    await tester.pumpAndSettle();
+
+    final restaurer = find.widgetWithText(TextButton, 'Restaurer');
+    expect(restaurer, findsOneWidget);
+    await tester.ensureVisible(restaurer);
+    await tester.pumpAndSettle();
+    await tester.tap(restaurer);
+
+    final restaure = await attendreSauvegarde(
+      tester,
+      (d) => (d['feuillesMensuelles'] as Map).containsKey('2026-11'),
+    );
+
+    expect(restaure['feuillesMensuelles'], {
+      '2026-11': novembre,
+      '2026-12': decembre,
+    });
+
+    expect(restaure['corbeilleMensuelle'], isEmpty);
+    expect(restaure['moisActif'], '2026-11');
+
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await ouvrirBudget(tester);
+
+    expect(find.text('Novembre 2026'), findsOneWidget);
+    expect(find.text('1100,00 €'), findsOneWidget);
+  });
+
+  testWidgets('Corbeille : expiration apres 30 jours', (tester) async {
+    await tester.runAsync(
+      () => preparerBudget(
+        moisActif: '2026-12',
+        feuilles: {'2026-12': feuille('2026-12', 1200)},
+      ),
+    );
+
+    await ouvrirBudget(tester);
+    final etat = tester.state(find.byType(StructureV2)) as dynamic;
+    final maintenant = DateTime.now().toUtc();
+
+    expect(
+      etat.entreeCorbeilleValide(
+        maintenant.subtract(const Duration(days: 29)),
+        maintenant,
+      ),
+      isTrue,
+    );
+
+    expect(
+      etat.entreeCorbeilleValide(
+        maintenant.subtract(const Duration(days: 30)),
+        maintenant,
+      ),
+      isFalse,
+    );
+
+    expect(
+      etat.entreeCorbeilleValide(
+        maintenant.subtract(const Duration(days: 31)),
+        maintenant,
+      ),
+      isFalse,
+    );
+  });
+
+  testWidgets('Corbeille : doublon et suppression definitive', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(480, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final novembre = feuille('2026-11', 1100);
+    final decembre = feuille('2026-12', 1200);
+
+    await tester.runAsync(() async {
+      await preparerBudget(
+        moisActif: '2026-12',
+        feuilles: {'2026-11': novembre, '2026-12': decembre},
+      );
+
+      final donnees = await StockageBudgetV2.charger();
+      donnees['corbeilleMensuelle'] = {
+        'doublon': {
+          'mois': '2026-11',
+          'suppression': DateTime.now().toUtc().toIso8601String(),
+          'feuille': feuille('2026-11', 999),
+        },
+      };
+      await StockageBudgetV2.enregistrer(donnees);
+    });
+
+    await ouvrirBudget(tester);
+    final etat = tester.state(find.byType(StructureV2)) as dynamic;
+    etat.changerPage(5);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Corbeille'));
+    await tester.pumpAndSettle();
+
+    final restaurer = find.widgetWithText(TextButton, 'Restaurer');
+    expect(restaurer, findsOneWidget);
+    expect(tester.widget<TextButton>(restaurer).onPressed, isNull);
+
+    final supprimer = find.widgetWithText(TextButton, 'Supprimer');
+    await tester.ensureVisible(supprimer);
+    await tester.pumpAndSettle();
+    await tester.tap(supprimer);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Suppression définitive'), findsOneWidget);
+
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+
+    expect(restaurer, findsOneWidget);
+
+    await tester.tap(supprimer);
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.widgetWithText(TextButton, 'Supprimer'),
+      ),
+    );
+
+    final sauvegarde = await attendreSauvegarde(
+      tester,
+      (d) => (d['corbeilleMensuelle'] as Map).isEmpty,
+    );
+
+    expect(sauvegarde['feuillesMensuelles'], {
+      '2026-11': novembre,
+      '2026-12': decembre,
+    });
+
+    await tester.pumpAndSettle();
+  });
+
+  // TEST_RECREATION_INTERMEDIAIRE_V1
+  testWidgets('Recreer un mois intermediaire sans ecraser la corbeille', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(480, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final octobre = feuille('2026-10', 1000);
+    final novembre = feuille('2026-11', 1100);
+    final decembre = feuille('2026-12', 1200);
+
+    await tester.runAsync(
+      () => preparerBudget(
+        moisActif: '2026-11',
+        feuilles: {
+          '2026-10': octobre,
+          '2026-11': novembre,
+          '2026-12': decembre,
+        },
+      ),
+    );
+
+    await ouvrirBudget(tester);
+    await ouvrirConfirmationSuppression(tester);
+    await tester.tap(find.widgetWithText(FilledButton, 'Supprimer ce mois'));
+
+    final suppression = await attendreSauvegarde(
+      tester,
+      (d) => !(d['feuillesMensuelles'] as Map).containsKey('2026-11'),
+    );
+
+    final corbeille = suppression['corbeilleMensuelle'] as Map;
+    expect(corbeille.length, 1);
+    expect(corbeille.values.single['feuille'], novembre);
+
+    await tester.pumpAndSettle();
+    await glisserMois(tester, enArriere: false);
+
+    expect(find.text('Novembre 2026'), findsOneWidget);
+
+    final bouton = find.byTooltip('Créer cette feuille');
+    expect(bouton, findsOneWidget);
+
+    final pages = controleur(tester);
+    final etat = tester.state(find.byType(StructureV2)) as dynamic;
+    final chronologie = List<String>.from(etat.moisAffiches as List);
+
+    await tester.ensureVisible(bouton);
+    await tester.pumpAndSettle();
+    await tester.tap(bouton);
+
+    final recreation = await attendreSauvegarde(
+      tester,
+      (d) => (d['feuillesMensuelles'] as Map).containsKey('2026-11'),
+    );
+
+    await tester.pumpAndSettle();
+
+    final feuilles = recreation['feuillesMensuelles'] as Map;
+    expect(feuilles.length, 3);
+    expect(feuilles['2026-10'], octobre);
+    expect(feuilles['2026-12'], decembre);
+    expect(feuilles['2026-11']['salaire'], 0);
+    expect(recreation['corbeilleMensuelle'], corbeille);
+    expect(recreation['moisActif'], '2026-11');
+    expect(controleur(tester), same(pages));
+    expect(etat.moisAffiches, chronologie);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await ouvrirBudget(tester);
+
+    expect(find.text('Novembre 2026'), findsOneWidget);
+    expect(find.byTooltip('Créer cette feuille'), findsNothing);
+
+    final persistance = await attendreSauvegarde(tester, (_) => true);
+    expect(persistance['feuillesMensuelles'], feuilles);
+    expect(persistance['corbeilleMensuelle'], corbeille);
+  });
 }

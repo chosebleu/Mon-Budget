@@ -1,0 +1,2 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android" android:minWidth="48dp" android:minHeight="48dp" android:targetCellWidth="1" android:targetCellHeight="1" android:initialLayout="@layout/budget_widget" android:previewImage="@drawable/budget_widget_preview" android:resizeMode="horizontal|vertical" android:updatePeriodMillis="0" android:widgetCategory="home_screen" android:minResizeWidth="40dp" android:minResizeHeight="40dp" />

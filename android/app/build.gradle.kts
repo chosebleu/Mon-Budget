@@ -29,38 +29,15 @@ android {
         versionName = flutter.versionName
     }
 
-    val releaseKeystorePath = System.getenv("MON_BUDGET_KEYSTORE_PATH")
-    val releaseStorePassword = System.getenv("MON_BUDGET_STORE_PASSWORD")
-    val releaseKeyPassword = System.getenv("MON_BUDGET_KEY_PASSWORD")
-
-    val releaseSigningEnabled =
-        !releaseKeystorePath.isNullOrBlank() &&
-        !releaseStorePassword.isNullOrBlank() &&
-        !releaseKeyPassword.isNullOrBlank()
-
-    signingConfigs {
-        if (releaseSigningEnabled) {
-            create("release") {
-                storeFile = file(releaseKeystorePath!!)
-                storePassword = releaseStorePassword!!
-                keyAlias = "monbudget"
-                keyPassword = releaseKeyPassword!!
-            }
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig = if (releaseSigningEnabled) {
-                signingConfigs.getByName("release")
-            } else {
-                signingConfigs.getByName("debug")
-            }
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }
 
-// GRADLE_BRACE_FIX_V2
 kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
